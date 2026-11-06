@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AAuth</string>
+
+    <!-- Common -->
+    <string name="settings">Настройки</string>
+    <string name="back">Назад</string>
+    <string name="more">Ещё</string>
+    <string name="cancel">Отмена</string>
+    <string name="delete">Удалить</string>
+    <string name="save">Сохранить</string>
+    <string name="continue_action">Продолжить</string>
+
+    <!-- Home -->
+    <string name="add_account">Добавить аккаунт</string>
+    <string name="scan_qr">Сканировать QR-код</string>
+    <string name="scan_qr_desc">Добавьте аккаунт, отсканировав QR-код настройки</string>
+    <string name="enter_key">Ввести ключ вручную</string>
+    <string name="enter_key_desc">Введите секретный ключ с клавиатуры</string>
+    <string name="empty_title">Пока нет аккаунтов</string>
+    <string name="empty_body">Добавьте первый аккаунт, чтобы получать одноразовые коды. Все данные остаются на этом устройстве.</string>
+    <string name="copied">Код скопирован</string>
+    <string name="copy_code">Копировать код</string>
+    <string name="delete_title">Удалить аккаунт?</string>
+    <string name="delete_body">Вы можете потерять доступ к %1$s, если не сохранили резервную копию или коды восстановления. Это действие нельзя отменить.</string>
+    <string name="decrypt_error">Не удалось расшифровать</string>
+
+    <!-- Scan -->
+    <string name="scan_hint">Наведите камеру на QR-код</string>
+    <string name="camera_permission_title">Нужен доступ к камере</string>
+    <string name="camera_permission_body">AAuth использует камеру только для сканирования QR-кодов настройки. Ничего не записывается и никуда не отправляется.</string>
+    <string name="grant_permission">Разрешить доступ</string>
+    <string name="scan_invalid">Этот QR-код не подходит для настройки 2FA</string>
+
+    <!-- Manual entry -->
+    <string name="manual_title">Ввод ключа</string>
+    <string name="field_issuer">Сервис (например, GitHub)</string>
+    <string name="field_account">Аккаунт (например, name@mail.com)</string>
+    <string name="field_secret">Секретный ключ</string>
+    <string name="error_secret">Введите корректный ключ Base32</string>
+    <string name="advanced">Дополнительные параметры</string>
+    <string name="algorithm">Алгоритм</string>
+    <string name="digits">Количество цифр</string>
+    <string name="period">Период (секунды)</string>
+
+    <!-- Add results -->
+    <string name="account_added">Аккаунт добавлен</string>
+    <string name="accounts_added">Добавлено аккаунтов: %1$d</string>
+    <string name="already_added">Уже добавлено, новых аккаунтов нет</string>
+
+    <!-- Lock -->
+    <string name="lock_title">AAuth заблокирован</string>
+    <string name="lock_unlock">Разблокировать</string>
+    <string name="unlock_title">Разблокировать AAuth</string>
+
+    <!-- Settings -->
+    <string name="settings_security">Безопасность</string>
+    <string name="settings_app_lock">Блокировка приложения</string>
+    <string name="settings_app_lock_desc">Запрашивать отпечаток, лицо или блокировку экрана при открытии</string>
+    <string name="settings_app_lock_unavailable">Сначала настройте блокировку экрана на устройстве</string>
+    <string name="settings_secure_screen">Защита содержимого экрана</string>
+    <string name="settings_secure_screen_desc">Запретить скриншоты и скрывать коды в списке приложений</string>
+    <string name="settings_backup">Резервная копия</string>
+    <string name="settings_export">Экспорт зашифрованной копии</string>
+    <string name="settings_export_desc">Сохранить все аккаунты в файл, защищённый паролем</string>
+    <string name="settings_import">Импорт копии</string>
+    <string name="settings_import_desc">Восстановить аккаунты из файла копии AAuth</string>
+    <string name="settings_about">О приложении</string>
+    <string name="settings_version">Версия %1$s</string>
+
+    <!-- Backup dialogs and results -->
+    <string name="password_title_export">Защитите резервную копию</string>
+    <string name="password_title_import">Введите пароль копии</string>
+    <string name="password">Пароль</string>
+    <string name="password_confirm">Повторите пароль</string>
+    <string name="password_mismatch">Пароли не совпадают</string>
+    <string name="password_short">Минимум 8 символов</string>
+    <string name="export_warning">Любой, у кого есть файл и пароль, сможет прочитать ваши коды. Храните оба в безопасности и не теряйте пароль: восстановить его невозможно.</string>
+    <string name="export_empty">Пока нечего экспортировать</string>
+    <string name="export_done">Копия сохранена</string>
+    <string name="export_failed">Не удалось сохранить копию</string>
+    <string name="import_done">Импортировано: %1$d, уже было: %2$d</string>
+    <string name="import_wrong_password">Неверный пароль или повреждённый файл</string>
+    <string name="import_invalid_file">Это не резервная копия AAuth</string>
+</resources>

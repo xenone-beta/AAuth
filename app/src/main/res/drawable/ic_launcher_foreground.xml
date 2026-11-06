@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Placeholder logo: a Material 3 tonal shield with a keyhole. Replace with the final artwork. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Shield -->
+    <path
+        android:fillColor="#EADDFF"
+        android:pathData="M54,28 L76,36 L76,54 C76,67 66,76 54,80 C42,76 32,67 32,54 L32,36 Z" />
+
+    <!-- Keyhole -->
+    <path
+        android:fillColor="#21005D"
+        android:pathData="M54,45 A5,5 0 0,1 56,54.58 L57.5,63 L50.5,63 L52,54.58 A5,5 0 0,1 54,45 Z" />
+</vector>
