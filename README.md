@@ -1,2 +1,0 @@
-# AAuth
-Something Good
