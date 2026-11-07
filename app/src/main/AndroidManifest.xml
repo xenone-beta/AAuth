@@ -35,6 +35,14 @@
             </intent-filter>
         </activity>
 
+        <!-- Shows the crash report in its own process, so it appears even when the main one died. -->
+        <activity
+            android:name=".CrashActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:process=":crash"
+            android:theme="@android:style/Theme.DeviceDefault" />
+
         <receiver
             android:name=".ui.widget.CodesWidgetReceiver"
             android:exported="true"

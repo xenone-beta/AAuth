@@ -144,4 +144,8 @@
     <string name="import_done">Imported %1$d, skipped %2$d already present</string>
     <string name="import_wrong_password">Wrong password or damaged file</string>
     <string name="import_invalid_file">This is not a valid AAuth backup</string>
+    <string name="crash_title">AAuth stopped unexpectedly</string>
+    <string name="crash_hint">Tap Copy and send this text to the developer.</string>
+    <string name="crash_copy">Copy</string>
+    <string name="crash_close">Close</string>
 </resources>

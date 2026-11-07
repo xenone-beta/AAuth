@@ -6,7 +6,7 @@ plugins {
 }
 
 // Values injected by CI (see .github/workflows/release.yml). Locally they fall back to defaults.
-val appVersionName: String = System.getenv("APP_VERSION_NAME") ?: "1.1.0"
+val appVersionName: String = System.getenv("APP_VERSION_NAME") ?: "1.1.1"
 val appVersionCode: Int = System.getenv("APP_VERSION_CODE")?.toIntOrNull() ?: 1
 val releaseKeystorePath: String? = System.getenv("AAUTH_KEYSTORE_FILE")
 
@@ -39,8 +39,8 @@ android {
             versionNameSuffix = "-debug"
         }
         release {
-            isMinifyEnabled = true
-            isShrinkResources = true
+            isMinifyEnabled = false
+            isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",

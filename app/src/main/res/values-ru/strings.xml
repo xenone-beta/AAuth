@@ -144,4 +144,8 @@
     <string name="import_done">Импортировано: %1$d, уже было: %2$d</string>
     <string name="import_wrong_password">Неверный пароль или повреждённый файл</string>
     <string name="import_invalid_file">Это не резервная копия AAuth</string>
+    <string name="crash_title">AAuth неожиданно остановилось</string>
+    <string name="crash_hint">Нажмите «Копировать» и отправьте этот текст разработчику.</string>
+    <string name="crash_copy">Копировать</string>
+    <string name="crash_close">Закрыть</string>
 </resources>
