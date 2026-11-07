@@ -12,7 +12,7 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
-import androidx.compose.foundation.border
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -45,6 +45,13 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -109,22 +116,21 @@ fun ScanScreen(
                         }
                     },
                 )
-                Box(
+                ViewfinderCorners(
                     modifier = Modifier
                         .align(Alignment.Center)
-                        .size(240.dp)
-                        .border(3.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(32.dp)),
+                        .size(240.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer,
                 )
                 Surface(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    shape = RoundedCornerShape(24.dp),
+                        .fillMaxWidth(),
+                    shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
                     color = MaterialTheme.colorScheme.surfaceContainer,
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Text(
@@ -161,6 +167,33 @@ fun ScanScreen(
                     }
                     TextButton(onClick = onManual) { Text(stringResource(R.string.enter_key)) }
                 }
+            }
+        }
+    }
+}
+
+/** Four rounded corner brackets, like the viewfinder in the design mockup. */
+@Composable
+private fun ViewfinderCorners(modifier: Modifier, color: Color) {
+    Canvas(modifier = modifier) {
+        val strokeWidth = 5.dp.toPx()
+        val arm = 52.dp.toPx()
+        val radius = 28.dp.toPx()
+        val half = strokeWidth / 2f
+
+        // Top-left bracket; the other three are mirrored copies of it.
+        val corner = Path().apply {
+            moveTo(half, arm)
+            lineTo(half, radius)
+            arcTo(Rect(half, half, half + 2 * (radius - half), half + 2 * (radius - half)), 180f, 90f, false)
+            lineTo(arm, half)
+        }
+        val style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+        val pivot = Offset(size.width / 2f, size.height / 2f)
+
+        for ((sx, sy) in listOf(1f to 1f, -1f to 1f, 1f to -1f, -1f to -1f)) {
+            withTransform({ scale(scaleX = sx, scaleY = sy, pivot = pivot) }) {
+                drawPath(corner, color, style = style)
             }
         }
     }

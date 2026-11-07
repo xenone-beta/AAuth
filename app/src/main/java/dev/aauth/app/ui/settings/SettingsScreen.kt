@@ -7,15 +7,16 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.biometric.BiometricManager
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -45,6 +46,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import dev.aauth.app.BuildConfig
 import dev.aauth.app.R
+import dev.aauth.app.core.PinHasher
 import java.time.LocalDate
 
 private const val AUTHENTICATORS =
@@ -54,18 +56,25 @@ private const val AUTHENTICATORS =
 fun SettingsScreen(
     appLock: Boolean,
     secureScreen: Boolean,
+    pinLength: Int,
     snackbarHostState: SnackbarHostState,
     onAppLockChange: (Boolean) -> Unit,
     onSecureScreenChange: (Boolean) -> Unit,
+    onSavePin: (String) -> Unit,
+    onRemovePin: () -> Unit,
     onExport: (Uri, CharArray) -> Unit,
     onImport: (Uri, CharArray) -> Unit,
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
-    val lockAvailable = remember {
+    val systemLockAvailable = remember {
         BiometricManager.from(context).canAuthenticate(AUTHENTICATORS) == BiometricManager.BIOMETRIC_SUCCESS
     }
+    val hasPin = pinLength > 0
+    // The lock can be switched on if the device has a screen lock or the user set an app PIN.
+    val lockAvailable = systemLockAvailable || hasPin
 
+    var showPinDialog by remember { mutableStateOf(false) }
     var showExportDialog by remember { mutableStateOf(false) }
     var exportPassword by remember { mutableStateOf<CharArray?>(null) }
     var importUri by remember { mutableStateOf<Uri?>(null) }
@@ -111,6 +120,14 @@ fun SettingsScreen(
                 enabled = lockAvailable,
                 onCheckedChange = onAppLockChange,
             )
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_pin)) },
+                supportingContent = {
+                    Text(stringResource(if (hasPin) R.string.settings_pin_set else R.string.settings_pin_desc))
+                },
+                trailingContent = { ChevronIcon() },
+                modifier = Modifier.clickable { showPinDialog = true },
+            )
             SwitchRow(
                 title = stringResource(R.string.settings_secure_screen),
                 description = stringResource(R.string.settings_secure_screen_desc),
@@ -125,11 +142,13 @@ fun SettingsScreen(
             ListItem(
                 headlineContent = { Text(stringResource(R.string.settings_export)) },
                 supportingContent = { Text(stringResource(R.string.settings_export_desc)) },
+                trailingContent = { ChevronIcon() },
                 modifier = Modifier.clickable { showExportDialog = true },
             )
             ListItem(
                 headlineContent = { Text(stringResource(R.string.settings_import)) },
                 supportingContent = { Text(stringResource(R.string.settings_import_desc)) },
+                trailingContent = { ChevronIcon() },
                 modifier = Modifier.clickable { openLauncher.launch(arrayOf("*/*")) },
             )
 
@@ -141,6 +160,21 @@ fun SettingsScreen(
                 supportingContent = { Text(stringResource(R.string.settings_version, BuildConfig.VERSION_NAME)) },
             )
         }
+    }
+
+    if (showPinDialog) {
+        PinDialog(
+            hasPin = hasPin,
+            onDismiss = { showPinDialog = false },
+            onSave = { pin ->
+                showPinDialog = false
+                onSavePin(pin)
+            },
+            onRemove = {
+                showPinDialog = false
+                onRemovePin()
+            },
+        )
     }
 
     if (showExportDialog) {
@@ -172,6 +206,15 @@ fun SettingsScreen(
 }
 
 @Composable
+private fun ChevronIcon() {
+    Icon(
+        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+        contentDescription = null,
+        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+@Composable
 private fun SectionHeader(text: String) {
     Text(
         text = text,
@@ -199,6 +242,69 @@ private fun SwitchRow(
             role = Role.Switch,
             onValueChange = onCheckedChange,
         ),
+    )
+}
+
+@Composable
+private fun PinDialog(
+    hasPin: Boolean,
+    onDismiss: () -> Unit,
+    onSave: (String) -> Unit,
+    onRemove: () -> Unit,
+) {
+    var pin by remember { mutableStateOf("") }
+    var repeat by remember { mutableStateOf("") }
+
+    val mismatch = repeat.isNotEmpty() && repeat != pin
+    val valid = PinHasher.isValidPin(pin) && pin == repeat
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(if (hasPin) R.string.pin_change_title else R.string.pin_set_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = stringResource(R.string.pin_hint, PinHasher.MIN_LENGTH, PinHasher.MAX_LENGTH),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                OutlinedTextField(
+                    value = pin,
+                    onValueChange = { v -> if (v.length <= PinHasher.MAX_LENGTH && v.all { it in '0'..'9' }) pin = v },
+                    label = { Text(stringResource(R.string.pin_new)) },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                )
+                OutlinedTextField(
+                    value = repeat,
+                    onValueChange = { v -> if (v.length <= PinHasher.MAX_LENGTH && v.all { it in '0'..'9' }) repeat = v },
+                    label = { Text(stringResource(R.string.pin_repeat)) },
+                    singleLine = true,
+                    isError = mismatch,
+                    supportingText = if (mismatch) {
+                        { Text(stringResource(R.string.pin_mismatch)) }
+                    } else {
+                        null
+                    },
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                )
+                if (hasPin) {
+                    TextButton(onClick = onRemove) {
+                        Text(
+                            text = stringResource(R.string.pin_remove),
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onSave(pin) }, enabled = valid) { Text(stringResource(R.string.save)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+        },
     )
 }
 

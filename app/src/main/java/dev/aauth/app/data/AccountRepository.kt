@@ -47,6 +47,9 @@ class AccountRepository(
 
     suspend fun delete(id: Long) = withContext(Dispatchers.IO) { dao.deleteById(id) }
 
+    suspend fun rename(id: Long, issuer: String, label: String) =
+        withContext(Dispatchers.IO) { dao.rename(id, issuer.trim(), label.trim()) }
+
     /** Returns every account that can still be decrypted, ready for export. */
     suspend fun exportAll(): List<OtpAccount> = withContext(Dispatchers.IO) {
         dao.getAll().mapNotNull { e ->

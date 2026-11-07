@@ -17,15 +17,16 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Keyboard
 import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -42,6 +43,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -61,7 +63,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -83,6 +87,7 @@ fun HomeScreen(
     onManual: () -> Unit,
     onSettings: () -> Unit,
     onDelete: (Long) -> Unit,
+    onEdit: (Long, String, String) -> Unit,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -91,6 +96,7 @@ fun HomeScreen(
 
     var showSheet by remember { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<Account?>(null) }
+    var editing by remember { mutableStateOf<Account?>(null) }
 
     // Ticks a few times per second so the countdown rings animate smoothly.
     val now by produceState(initialValue = System.currentTimeMillis()) {
@@ -104,7 +110,12 @@ fun HomeScreen(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             LargeTopAppBar(
-                title = { Text(stringResource(R.string.app_name)) },
+                title = {
+                    Text(
+                        text = stringResource(R.string.app_name),
+                        fontWeight = FontWeight.Bold,
+                    )
+                },
                 actions = {
                     IconButton(onClick = onSettings) {
                         Icon(Icons.Outlined.Settings, contentDescription = stringResource(R.string.settings))
@@ -117,6 +128,8 @@ fun HomeScreen(
             if (!accounts.isNullOrEmpty()) {
                 ExtendedFloatingActionButton(
                     onClick = { showSheet = true },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
                     icon = { Icon(Icons.Filled.Add, contentDescription = null) },
                     text = { Text(stringResource(R.string.add_account)) },
                 )
@@ -158,6 +171,7 @@ fun HomeScreen(
                             copySensitive(context, code)
                             scope.launch { snackbarHostState.showSnackbar(copiedText) }
                         },
+                        onEdit = { editing = account },
                         onDelete = { pendingDelete = account },
                     )
                 }
@@ -173,7 +187,7 @@ fun HomeScreen(
             ListItem(
                 headlineContent = { Text(stringResource(R.string.scan_qr)) },
                 supportingContent = { Text(stringResource(R.string.scan_qr_desc)) },
-                leadingContent = { Icon(Icons.Outlined.QrCodeScanner, contentDescription = null) },
+                leadingContent = { SheetIcon(Icons.Outlined.QrCodeScanner) },
                 modifier = Modifier.clickable {
                     showSheet = false
                     onScan()
@@ -182,7 +196,7 @@ fun HomeScreen(
             ListItem(
                 headlineContent = { Text(stringResource(R.string.enter_key)) },
                 supportingContent = { Text(stringResource(R.string.enter_key_desc)) },
-                leadingContent = { Icon(Icons.Outlined.Keyboard, contentDescription = null) },
+                leadingContent = { SheetIcon(Icons.Outlined.Keyboard) },
                 modifier = Modifier.clickable {
                     showSheet = false
                     onManual()
@@ -190,6 +204,17 @@ fun HomeScreen(
             )
             Spacer(Modifier.height(24.dp))
         }
+    }
+
+    editing?.let { account ->
+        EditDialog(
+            account = account,
+            onDismiss = { editing = null },
+            onSave = { issuer, label ->
+                onEdit(account.id, issuer, label)
+                editing = null
+            },
+        )
     }
 
     pendingDelete?.let { account ->
@@ -217,6 +242,7 @@ private fun AccountCard(
     account: Account,
     nowMillis: Long,
     onCopy: (String) -> Unit,
+    onEdit: () -> Unit,
     onDelete: () -> Unit,
 ) {
     val secret = account.secret
@@ -235,6 +261,7 @@ private fun AccountCard(
     Card(
         onClick = { code?.let { onCopy(it) } },
         modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
     ) {
         Row(
@@ -291,7 +318,11 @@ private fun AccountCard(
                     modifier = Modifier.size(40.dp),
                     color = accent,
                     strokeWidth = 4.dp,
-                    trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    trackColor = if (expiring) {
+                        MaterialTheme.colorScheme.errorContainer
+                    } else {
+                        MaterialTheme.colorScheme.primaryContainer
+                    },
                 )
                 Text(
                     text = remaining.toString(),
@@ -311,6 +342,14 @@ private fun AccountCard(
                         onClick = {
                             menuOpen = false
                             code?.let { onCopy(it) }
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.edit)) },
+                        leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null) },
+                        onClick = {
+                            menuOpen = false
+                            onEdit()
                         },
                     )
                     DropdownMenuItem(
@@ -348,10 +387,10 @@ private fun EmptyState(
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
-                    imageVector = Icons.Outlined.Shield,
+                    painter = painterResource(R.drawable.ic_shield_keyhole),
                     contentDescription = null,
-                    modifier = Modifier.size(48.dp),
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(52.dp),
+                    tint = MaterialTheme.colorScheme.primary,
                 )
             }
         }
@@ -379,6 +418,64 @@ private fun EmptyState(
             Text(stringResource(R.string.enter_key))
         }
     }
+}
+
+/** Leading icon for the add-account sheet: a tonal circle like in the design mockup. */
+@Composable
+private fun SheetIcon(icon: ImageVector) {
+    Surface(
+        modifier = Modifier.size(48.dp),
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+            )
+        }
+    }
+}
+
+@Composable
+private fun EditDialog(
+    account: Account,
+    onDismiss: () -> Unit,
+    onSave: (String, String) -> Unit,
+) {
+    var issuer by remember(account.id) { mutableStateOf(account.issuer) }
+    var label by remember(account.id) { mutableStateOf(account.label) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.edit_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = issuer,
+                    onValueChange = { issuer = it },
+                    label = { Text(stringResource(R.string.field_issuer)) },
+                    singleLine = true,
+                )
+                OutlinedTextField(
+                    value = label,
+                    onValueChange = { label = it },
+                    label = { Text(stringResource(R.string.field_account)) },
+                    singleLine = true,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onSave(issuer, label) },
+                enabled = issuer.isNotBlank() || label.isNotBlank(),
+            ) { Text(stringResource(R.string.save)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+        },
+    )
 }
 
 /** "123456" -> "123 456", "12345678" -> "1234 5678". */

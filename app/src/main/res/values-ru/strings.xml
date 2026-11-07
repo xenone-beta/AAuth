@@ -68,6 +68,38 @@
     <string name="settings_about">О приложении</string>
     <string name="settings_version">Версия %1$s</string>
 
+    <!-- Edit account -->
+    <string name="edit">Изменить</string>
+    <string name="edit_title">Изменить аккаунт</string>
+    <string name="account_updated">Аккаунт обновлён</string>
+
+    <!-- App PIN -->
+    <string name="settings_pin">PIN-код приложения</string>
+    <string name="settings_pin_desc">Свой PIN вместо блокировки экрана устройства</string>
+    <string name="settings_pin_set">PIN задан. Нажмите, чтобы изменить или удалить</string>
+    <string name="pin_set_title">Задайте PIN-код</string>
+    <string name="pin_change_title">Изменить PIN-код</string>
+    <string name="pin_hint">От %1$d до %2$d цифр. Запрашивается при открытии приложения, вместе с отпечатком или лицом, если они доступны.</string>
+    <string name="pin_new">Новый PIN</string>
+    <string name="pin_repeat">Повторите PIN</string>
+    <string name="pin_mismatch">PIN-коды не совпадают</string>
+    <string name="pin_remove">Удалить PIN</string>
+    <string name="pin_saved">PIN сохранён, блокировка включена</string>
+    <string name="pin_removed">PIN удалён</string>
+    <string name="pin_enter">Введите PIN</string>
+    <string name="pin_wrong">Неверный PIN. Попыток до паузы: %1$d</string>
+    <string name="pin_wait">Слишком много попыток. Повторите через %1$s</string>
+    <string name="pin_backspace">Удалить цифру</string>
+    <string name="use_pin">Ввести PIN</string>
+    <string name="use_biometrics">Отпечаток или лицо</string>
+
+    <!-- Widget -->
+    <string name="widget_description">Одноразовые коды на главном экране</string>
+    <string name="widget_title">AAuth</string>
+    <string name="widget_tap_to_show">Нажмите, чтобы показать</string>
+    <string name="widget_locked">Откройте приложение, чтобы разблокировать</string>
+    <string name="widget_empty">Пока нет аккаунтов. Откройте AAuth, чтобы добавить.</string>
+
     <!-- Backup dialogs and results -->
     <string name="password_title_export">Защитите резервную копию</string>
     <string name="password_title_import">Введите пароль копии</string>

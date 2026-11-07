@@ -3,6 +3,7 @@ package dev.aauth.app
 import android.app.Application
 import android.net.Uri
 import androidx.annotation.StringRes
+import androidx.glance.appwidget.updateAll
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import dev.aauth.app.core.BackupCrypto
@@ -10,9 +11,12 @@ import dev.aauth.app.core.InvalidBackupException
 import dev.aauth.app.core.MigrationParser
 import dev.aauth.app.core.OtpAccount
 import dev.aauth.app.core.OtpAuthUri
+import dev.aauth.app.core.PinHasher
+import dev.aauth.app.core.PinLockout
 import dev.aauth.app.core.WrongPasswordException
 import dev.aauth.app.data.Account
 import dev.aauth.app.data.BackupFormat
+import dev.aauth.app.ui.widget.CodesWidget
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -26,6 +30,17 @@ import kotlinx.coroutines.withContext
 /** A one-shot message for the snackbar: a string resource plus optional format arguments. */
 class UiMessage(@StringRes val resId: Int, val args: List<Any> = emptyList())
 
+/** Result of checking a PIN typed on the lock screen. */
+sealed interface PinCheck {
+    data object Ok : PinCheck
+
+    /** Wrong PIN. [attemptsLeft] is how many tries remain before the next forced wait (0 = now waiting). */
+    data class Wrong(val attemptsLeft: Int, val lockedUntil: Long) : PinCheck
+
+    /** Entry is refused until [until] (wall-clock millis). */
+    data class Locked(val until: Long) : PinCheck
+}
+
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val container = application as AAuthApplication
     private val repository = container.repository
@@ -38,11 +53,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val appLockEnabled: StateFlow<Boolean> = settings.appLock
     val secureScreen: StateFlow<Boolean> = settings.secureScreen
 
+    /** 0 when no PIN is set. */
+    val pinLength: StateFlow<Int> = settings.pinLength
+
     private val messageChannel = Channel<UiMessage>(Channel.BUFFERED)
     val messages: Flow<UiMessage> = messageChannel.receiveAsFlow()
 
     private fun post(message: UiMessage) {
         messageChannel.trySend(message)
+    }
+
+    /** Re-renders home screen widgets after accounts or lock settings change. */
+    private fun refreshWidget() {
+        viewModelScope.launch {
+            runCatching { CodesWidget().updateAll(getApplication<Application>()) }
+        }
     }
 
     // ---- Adding accounts -------------------------------------------------------------------
@@ -74,17 +99,74 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 else -> UiMessage(R.string.accounts_added, listOf(added))
             },
         )
+        if (added > 0) refreshWidget()
+    }
+
+    fun rename(id: Long, issuer: String, label: String) {
+        viewModelScope.launch {
+            repository.rename(id, issuer, label)
+            post(UiMessage(R.string.account_updated))
+            refreshWidget()
+        }
     }
 
     fun delete(id: Long) {
-        viewModelScope.launch { repository.delete(id) }
+        viewModelScope.launch {
+            repository.delete(id)
+            refreshWidget()
+        }
     }
 
     // ---- Settings --------------------------------------------------------------------------
 
-    fun setAppLock(enabled: Boolean) = settings.setAppLock(enabled)
+    fun setAppLock(enabled: Boolean) {
+        settings.setAppLock(enabled)
+        refreshWidget()
+    }
 
     fun setSecureScreen(enabled: Boolean) = settings.setSecureScreen(enabled)
+
+    // ---- PIN -------------------------------------------------------------------------------
+
+    /** Stores a new PIN and turns the app lock on. */
+    fun savePin(pin: String) {
+        if (!PinHasher.isValidPin(pin)) return
+        viewModelScope.launch {
+            withContext(Dispatchers.Default) { settings.savePin(pin) }
+            settings.setAppLock(true)
+            post(UiMessage(R.string.pin_saved))
+            refreshWidget()
+        }
+    }
+
+    fun removePin() {
+        settings.clearPin()
+        post(UiMessage(R.string.pin_removed))
+    }
+
+    /** Verifies a PIN from the lock screen, applying escalating delays after repeated mistakes. */
+    suspend fun checkPin(pin: String): PinCheck {
+        val now = System.currentTimeMillis()
+        val lockedUntil = settings.lockedUntil
+        if (lockedUntil > now) return PinCheck.Locked(lockedUntil)
+
+        val ok = withContext(Dispatchers.Default) { settings.verifyPin(pin) }
+        if (ok) {
+            settings.failedAttempts = 0
+            settings.lockedUntil = 0L
+            return PinCheck.Ok
+        }
+
+        val failed = settings.failedAttempts + 1
+        settings.failedAttempts = failed
+        val delay = PinLockout.delayMillis(failed)
+        val until = if (delay > 0) System.currentTimeMillis() + delay else 0L
+        settings.lockedUntil = until
+        return PinCheck.Wrong(PinLockout.attemptsLeftBeforeDelay(failed), until)
+    }
+
+    /** Wall-clock time until which PIN entry is refused, or 0 when entry is allowed. */
+    fun pinLockedUntil(): Long = settings.lockedUntil.takeIf { it > System.currentTimeMillis() } ?: 0L
 
     // ---- Backup ----------------------------------------------------------------------------
 
@@ -123,6 +205,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val accounts = BackupFormat.fromBytes(plain)
                 val added = repository.addAll(accounts)
                 post(UiMessage(R.string.import_done, listOf(added, accounts.size - added)))
+                if (added > 0) refreshWidget()
             } catch (e: WrongPasswordException) {
                 post(UiMessage(R.string.import_wrong_password))
             } catch (e: InvalidBackupException) {

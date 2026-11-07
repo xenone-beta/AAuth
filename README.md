@@ -13,8 +13,11 @@ No accounts, no cloud, no analytics: your secrets never leave the device.
 - Time-based one-time codes (RFC 6238) with SHA-1, SHA-256 and SHA-512, 6 to 8 digits, custom period
 - Add accounts by **scanning a QR code** (CameraX + ML Kit) or by typing the setup key
 - **Import from Google Authenticator** by scanning its "Export accounts" QR code
+- Rename accounts (service and account name) at any time
 - Secrets encrypted with an **AES-256-GCM key in the Android Keystore**
-- Optional **app lock** with biometrics or the device screen lock
+- Optional **app lock** with biometrics or the device screen lock, or with a **separate app PIN** (4 to 8 digits,
+  salted PBKDF2, escalating delay after repeated wrong tries)
+- **Home screen widget**: codes stay hidden until you tap a row, then hide again when the 30 s window ends
 - Screenshots blocked and codes hidden in the app switcher (can be turned off)
 - Codes copied to the clipboard are flagged as sensitive on Android 13+
 - **Encrypted backups**: export and import a password-protected file (PBKDF2-HMAC-SHA256 + AES-256-GCM)
@@ -23,7 +26,23 @@ No accounts, no cloud, no analytics: your secrets never leave the device.
 ## Tech stack
 
 Kotlin, Jetpack Compose, Material 3, Navigation Compose, Room (KSP), CameraX, ML Kit Barcode Scanning,
-AndroidX Biometric, Android Keystore. No DI framework: a small hand-rolled container is enough.
+AndroidX Biometric, Jetpack Glance (widget), WorkManager, Android Keystore. No DI framework: a small
+hand-rolled container is enough.
+
+<!--
+## Screenshots
+
+Replace this comment with real screenshots taken on a device (see docs/screenshots/README.md):
+
+| Home | Add account | Settings |
+| --- | --- | --- |
+| <img src="docs/screenshots/home.png" width="240"> | <img src="docs/screenshots/add.png" width="240"> | <img src="docs/screenshots/settings.png" width="240"> |
+-->
+
+## Screenshots
+
+Coming soon. To take them yourself, switch off **Settings, Protect screen content** first, otherwise Android
+shows a black screen.
 
 ## Project layout
 
@@ -89,12 +108,19 @@ Never commit the `.jks` file (it is in `.gitignore`).
 - Android cloud backup and device transfer are disabled for the app data for the same reason. Use the
   encrypted export to move accounts between devices.
 - Backup files are only as strong as the password you choose. Keep the file and password safe.
-- App lock fails open if the device has no screen lock configured, because there is nothing to authenticate with.
+- App lock fails open if the device has no screen lock and no app PIN is set, because there is nothing to
+  authenticate with.
+- With an app PIN set, only biometrics are offered next to it (not the device screen lock), so knowing the
+  phone's unlock code does not bypass the app PIN.
+- PIN throttling uses the wall clock, so changing the system time can shorten a delay. It slows down guessing
+  but is not a substitute for a strong device lock.
+- The widget never shows a code while the app lock is on: tapping a row opens the app instead. With the lock
+  off, a revealed code is visible on the home screen until its 30 s window ends.
 
 ## Roadmap
 
-- Edit and reorder accounts, search
-- Hide codes until tapped
+- Reorder accounts, search, folders
+- Hide codes in the app until tapped
 - HOTP and Steam Guard support
 - Tablet and foldable layouts
 

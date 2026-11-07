@@ -2,12 +2,15 @@
 
 package dev.aauth.app.ui.add
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -32,6 +35,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -44,6 +48,35 @@ import dev.aauth.app.core.OtpAlgorithm
 
 private val DIGIT_OPTIONS = listOf(6, 7, 8)
 private val PERIOD_OPTIONS = listOf(15, 30, 60)
+
+/** Label on the left, segmented buttons on the right, as in the design mockup. */
+@Composable
+private fun SegmentRow(
+    label: String,
+    options: List<String>,
+    selectedIndex: Int,
+    onSelect: (Int) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.width(96.dp),
+        )
+        SingleChoiceSegmentedButtonRow(modifier = Modifier.weight(1f)) {
+            options.forEachIndexed { index, option ->
+                SegmentedButton(
+                    selected = selectedIndex == index,
+                    onClick = { onSelect(index) },
+                    shape = SegmentedButtonDefaults.itemShape(index, options.size),
+                ) { Text(option, maxLines = 1) }
+            }
+        }
+    }
+}
 
 @Composable
 fun ManualEntryScreen(
@@ -116,48 +149,33 @@ fun ManualEntryScreen(
                 modifier = Modifier.fillMaxWidth(),
             )
 
-            TextButton(onClick = { showAdvanced = !showAdvanced }) {
-                Text(stringResource(R.string.advanced))
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                TextButton(onClick = { showAdvanced = !showAdvanced }) {
+                    Text(stringResource(R.string.advanced))
+                }
             }
 
             if (showAdvanced) {
-                Text(stringResource(R.string.algorithm), style = MaterialTheme.typography.labelLarge)
-                Spacer(Modifier.height(8.dp))
-                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                    algorithms.forEachIndexed { index, algorithm ->
-                        SegmentedButton(
-                            selected = algorithmIndex == index,
-                            onClick = { algorithmIndex = index },
-                            shape = SegmentedButtonDefaults.itemShape(index, algorithms.size),
-                        ) { Text(algorithm.uriName) }
-                    }
-                }
-
-                Spacer(Modifier.height(16.dp))
-                Text(stringResource(R.string.digits), style = MaterialTheme.typography.labelLarge)
-                Spacer(Modifier.height(8.dp))
-                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                    DIGIT_OPTIONS.forEachIndexed { index, option ->
-                        SegmentedButton(
-                            selected = digits == option,
-                            onClick = { digits = option },
-                            shape = SegmentedButtonDefaults.itemShape(index, DIGIT_OPTIONS.size),
-                        ) { Text(option.toString()) }
-                    }
-                }
-
-                Spacer(Modifier.height(16.dp))
-                Text(stringResource(R.string.period), style = MaterialTheme.typography.labelLarge)
-                Spacer(Modifier.height(8.dp))
-                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                    PERIOD_OPTIONS.forEachIndexed { index, option ->
-                        SegmentedButton(
-                            selected = period == option,
-                            onClick = { period = option },
-                            shape = SegmentedButtonDefaults.itemShape(index, PERIOD_OPTIONS.size),
-                        ) { Text(option.toString()) }
-                    }
-                }
+                SegmentRow(
+                    label = stringResource(R.string.algorithm),
+                    options = algorithms.map { it.uriName },
+                    selectedIndex = algorithmIndex,
+                    onSelect = { algorithmIndex = it },
+                )
+                Spacer(Modifier.height(12.dp))
+                SegmentRow(
+                    label = stringResource(R.string.digits),
+                    options = DIGIT_OPTIONS.map { it.toString() },
+                    selectedIndex = DIGIT_OPTIONS.indexOf(digits),
+                    onSelect = { digits = DIGIT_OPTIONS[it] },
+                )
+                Spacer(Modifier.height(12.dp))
+                SegmentRow(
+                    label = stringResource(R.string.period),
+                    options = PERIOD_OPTIONS.map { it.toString() },
+                    selectedIndex = PERIOD_OPTIONS.indexOf(period),
+                    onSelect = { period = PERIOD_OPTIONS[it] },
+                )
             }
 
             Spacer(Modifier.height(24.dp))

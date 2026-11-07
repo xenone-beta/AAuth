@@ -37,6 +37,7 @@ fun AAuthApp(viewModel: MainViewModel) {
     val accounts by viewModel.accounts.collectAsStateWithLifecycle()
     val appLock by viewModel.appLockEnabled.collectAsStateWithLifecycle()
     val secureScreen by viewModel.secureScreen.collectAsStateWithLifecycle()
+    val pinLength by viewModel.pinLength.collectAsStateWithLifecycle()
 
     NavHost(navController = navController, startDestination = Routes.HOME) {
         composable(Routes.HOME) {
@@ -47,6 +48,7 @@ fun AAuthApp(viewModel: MainViewModel) {
                 onManual = { navController.navigate(Routes.MANUAL) },
                 onSettings = { navController.navigate(Routes.SETTINGS) },
                 onDelete = { id -> viewModel.delete(id) },
+                onEdit = { id, issuer, label -> viewModel.rename(id, issuer, label) },
             )
         }
         composable(Routes.SCAN) {
@@ -75,9 +77,12 @@ fun AAuthApp(viewModel: MainViewModel) {
             SettingsScreen(
                 appLock = appLock,
                 secureScreen = secureScreen,
+                pinLength = pinLength,
                 snackbarHostState = snackbarHostState,
                 onAppLockChange = { viewModel.setAppLock(it) },
                 onSecureScreenChange = { viewModel.setSecureScreen(it) },
+                onSavePin = { viewModel.savePin(it) },
+                onRemovePin = { viewModel.removePin() },
                 onExport = { uri, password -> viewModel.exportBackup(uri, password) },
                 onImport = { uri, password -> viewModel.importBackup(uri, password) },
                 onBack = { navController.popBackStack() },

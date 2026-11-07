@@ -34,6 +34,7 @@ class MainActivity : FragmentActivity() {
             AAuthTheme {
                 val lockEnabled by viewModel.appLockEnabled.collectAsStateWithLifecycle()
                 val secureScreen by viewModel.secureScreen.collectAsStateWithLifecycle()
+                val pinLength by viewModel.pinLength.collectAsStateWithLifecycle()
 
                 // Blocks screenshots and hides the content in the recent-apps switcher.
                 LaunchedEffect(secureScreen) {
@@ -47,7 +48,14 @@ class MainActivity : FragmentActivity() {
                 if (!lockEnabled || unlocked) {
                     AAuthApp(viewModel)
                 } else {
-                    LockScreen(onUnlock = ::promptUnlock)
+                    LockScreen(
+                        pinLength = pinLength,
+                        biometricAvailable = canUseBiometrics(hasPin = pinLength > 0),
+                        initialLockedUntil = viewModel.pinLockedUntil(),
+                        onCheckPin = { pin -> viewModel.checkPin(pin) },
+                        onBiometric = ::promptUnlock,
+                        onUnlocked = { unlocked = true },
+                    )
                 }
             }
         }
@@ -71,13 +79,26 @@ class MainActivity : FragmentActivity() {
         lastStopTime = SystemClock.elapsedRealtime()
     }
 
+    /**
+     * With an app PIN, only biometrics are offered next to it: allowing the device screen lock
+     * as well would let anyone who knows the phone's PIN skip the app PIN.
+     */
+    private fun authenticators(hasPin: Boolean): Int =
+        if (hasPin) {
+            BiometricManager.Authenticators.BIOMETRIC_WEAK
+        } else {
+            BiometricManager.Authenticators.BIOMETRIC_WEAK or BiometricManager.Authenticators.DEVICE_CREDENTIAL
+        }
+
+    private fun canUseBiometrics(hasPin: Boolean): Boolean =
+        BiometricManager.from(this).canAuthenticate(authenticators(hasPin)) == BiometricManager.BIOMETRIC_SUCCESS
+
     private fun promptUnlock() {
         if (promptShowing) return
-        val authenticators = BiometricManager.Authenticators.BIOMETRIC_WEAK or
-            BiometricManager.Authenticators.DEVICE_CREDENTIAL
-        if (BiometricManager.from(this).canAuthenticate(authenticators) != BiometricManager.BIOMETRIC_SUCCESS) {
-            // The user removed their screen lock: there is nothing to authenticate with.
-            unlocked = true
+        val hasPin = viewModel.pinLength.value > 0
+        if (!canUseBiometrics(hasPin)) {
+            // No PIN and no screen lock on the device: there is nothing to authenticate with.
+            if (!hasPin) unlocked = true
             return
         }
 
@@ -96,12 +117,12 @@ class MainActivity : FragmentActivity() {
                 }
             },
         )
-        prompt.authenticate(
-            BiometricPrompt.PromptInfo.Builder()
-                .setTitle(getString(R.string.unlock_title))
-                .setAllowedAuthenticators(authenticators)
-                .build(),
-        )
+        val info = BiometricPrompt.PromptInfo.Builder()
+            .setTitle(getString(R.string.unlock_title))
+            .setAllowedAuthenticators(authenticators(hasPin))
+            .apply { if (hasPin) setNegativeButtonText(getString(R.string.use_pin)) }
+            .build()
+        prompt.authenticate(info)
     }
 
     private companion object {
