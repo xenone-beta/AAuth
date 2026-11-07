@@ -1,6 +1,6 @@
 # AAuth
 
-[![CI](https://github.com/YOUR_USERNAME/AAuth/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/AAuth/actions/workflows/ci.yml)
+[![CI](https://github.com/xenone-beta/AAuth/actions/workflows/ci.yml/badge.svg)](https://github.com/xenone-beta/AAuth/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 An offline, open-source two-factor authenticator (TOTP) for Android, built with Jetpack Compose and Material 3 (Material You).
