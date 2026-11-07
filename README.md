@@ -18,6 +18,9 @@ No accounts, no cloud, no analytics: your secrets never leave the device.
 - Optional **app lock** with biometrics or the device screen lock, or with a **separate app PIN** (4 to 8 digits,
   salted PBKDF2, escalating delay after repeated wrong tries)
 - **Home screen widget**: codes stay hidden until you tap a row, then hide again when the 30 s window ends
+- Brand colors for popular services (optional logos, see [docs/service-icons.md](docs/service-icons.md))
+- In-app **language choice** (system, English, Russian) and an **About** screen with privacy notes and changelog
+- No internet permission: the app cannot send data anywhere (`INTERNET` is removed in the manifest)
 - Screenshots blocked and codes hidden in the app switcher (can be turned off)
 - Codes copied to the clipboard are flagged as sensitive on Android 13+
 - **Encrypted backups**: export and import a password-protected file (PBKDF2-HMAC-SHA256 + AES-256-GCM)

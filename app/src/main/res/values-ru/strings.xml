@@ -93,6 +93,36 @@
     <string name="use_pin">Ввести PIN</string>
     <string name="use_biometrics">Отпечаток или лицо</string>
 
+    <!-- Language and About row in settings -->
+    <string name="settings_general">Общие</string>
+    <string name="settings_language">Язык</string>
+    <string name="language_system">Как в системе</string>
+    <string name="language_en">English</string>
+    <string name="language_ru">Русский</string>
+    <string name="settings_about_row">О приложении AAuth</string>
+    <string name="settings_about_row_desc">Возможности, приватность, что нового</string>
+
+    <!-- About screen -->
+    <string name="about_title">О приложении</string>
+    <string name="about_tagline">Простые и приватные коды двухфакторной защиты</string>
+    <string name="about_description">AAuth — бесплатный аутентификатор с открытым исходным кодом. Он генерирует одноразовые коды для ваших аккаунтов и хранит всё на вашем устройстве.</string>
+    <string name="about_features_title">Что умеет</string>
+    <string name="about_features">• Одноразовые коды по времени (TOTP): SHA-1, SHA-256, SHA-512, от 6 до 8 цифр\n• Добавление сканированием QR-кода или вводом ключа, импорт из Google Authenticator\n• Секреты шифруются ключом из Android Keystore\n• Блокировка приложения: отпечаток, лицо, экран блокировки или свой PIN\n• Зашифрованная резервная копия, защищённая паролем\n• Виджет на главном экране, коды скрыты, пока не нажмёте\n• Дизайн Material You, светлая и тёмная темы, русский и английский</string>
+    <string name="about_privacy_title">Приватность</string>
+    <string name="about_privacy_body">В AAuth нет аккаунтов, серверов, аналитики и рекламы. Ваши секреты хранятся только на этом устройстве и зашифрованы ключом, который не покидает Android Keystore. У приложения нет разрешения на доступ в интернет, поэтому ничего не может быть отправлено наружу. Камера используется только для сканирования QR-кодов, ничего не записывается. Файл резервной копии создаётся только когда вы сами его экспортируете, и пароль знаете только вы.</string>
+    <string name="about_changelog_title">Что нового</string>
+    <string name="about_changelog_110_title">Версия 1.1.0</string>
+    <string name="about_changelog_110">• Переименование аккаунтов\n• PIN-код приложения с паузами после неверных попыток\n• Виджет на главном экране\n• Фирменные цвета популярных сервисов\n• Выбор языка\n• Новый экран «О приложении»\n• Обновлённый дизайн</string>
+    <string name="about_changelog_100_title">Версия 1.0.0</string>
+    <string name="about_changelog_100">• Первый релиз: коды TOTP, сканирование QR, импорт из Google Authenticator, зашифрованная копия, блокировка приложения</string>
+    <string name="about_project_title">Проект</string>
+    <string name="about_github">Исходный код на GitHub</string>
+    <string name="about_license">Открытый код, лицензия MIT</string>
+    <string name="about_author_title">Автор</string>
+    <string name="about_author_name">xenone-beta</string>
+    <string name="about_thanks">Спасибо, что пользуетесь AAuth!</string>
+    <string name="about_thanks_sub">Если нравится, поставьте проекту звезду на GitHub.</string>
+
     <!-- Widget -->
     <string name="widget_description">Одноразовые коды на главном экране</string>
     <string name="widget_title">AAuth</string>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Service logos are looked up by name at runtime (svc_github, svc_google, ...),
+     so resource shrinking must not remove them. -->
+<resources
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/svc_*" />

@@ -93,6 +93,36 @@
     <string name="use_pin">Use PIN</string>
     <string name="use_biometrics">Use fingerprint or face</string>
 
+    <!-- Language and About row in settings -->
+    <string name="settings_general">General</string>
+    <string name="settings_language">Language</string>
+    <string name="language_system">System default</string>
+    <string name="language_en">English</string>
+    <string name="language_ru">Русский</string>
+    <string name="settings_about_row">About AAuth</string>
+    <string name="settings_about_row_desc">Features, privacy, what\'s new</string>
+
+    <!-- About screen -->
+    <string name="about_title">About</string>
+    <string name="about_tagline">Simple, private two-factor codes</string>
+    <string name="about_description">AAuth is a free, open-source authenticator. It generates one-time codes for your accounts and keeps everything on your device.</string>
+    <string name="about_features_title">What it can do</string>
+    <string name="about_features">• Time-based one-time codes (TOTP) with SHA-1, SHA-256 and SHA-512, 6 to 8 digits\n• Add accounts by scanning a QR code or typing the key, import from Google Authenticator\n• Secrets encrypted with a key stored in the Android Keystore\n• App lock with fingerprint, face, device screen lock or your own PIN\n• Encrypted backup file protected by a password\n• Home screen widget, codes stay hidden until you tap\n• Material You design, light and dark theme, English and Russian</string>
+    <string name="about_privacy_title">Privacy</string>
+    <string name="about_privacy_body">AAuth has no accounts, servers, analytics or ads. Your secrets are stored only on this device, encrypted with a key that never leaves the Android Keystore. The app has no permission to use the internet, so nothing can be sent anywhere. The camera is used only to scan QR codes, nothing is recorded. A backup file is created only when you export one, and only you know its password.</string>
+    <string name="about_changelog_title">What\'s new</string>
+    <string name="about_changelog_110_title">Version 1.1.0</string>
+    <string name="about_changelog_110">• Rename accounts\n• App PIN with delays after wrong attempts\n• Home screen widget\n• Brand colors for popular services\n• Language selection\n• New About screen\n• Refreshed design</string>
+    <string name="about_changelog_100_title">Version 1.0.0</string>
+    <string name="about_changelog_100">• First release: TOTP codes, QR scanning, Google Authenticator import, encrypted backup, app lock</string>
+    <string name="about_project_title">Project</string>
+    <string name="about_github">Source code on GitHub</string>
+    <string name="about_license">Open source, MIT license</string>
+    <string name="about_author_title">Author</string>
+    <string name="about_author_name">xenone-beta</string>
+    <string name="about_thanks">Thank you for using AAuth!</string>
+    <string name="about_thanks_sub">If you like it, give the project a star on GitHub.</string>
+
     <!-- Widget -->
     <string name="widget_description">One-time codes on your home screen</string>
     <string name="widget_title">AAuth</string>

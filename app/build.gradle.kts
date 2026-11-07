@@ -6,7 +6,7 @@ plugins {
 }
 
 // Values injected by CI (see .github/workflows/release.yml). Locally they fall back to defaults.
-val appVersionName: String = System.getenv("APP_VERSION_NAME") ?: "1.0.0"
+val appVersionName: String = System.getenv("APP_VERSION_NAME") ?: "1.1.0"
 val appVersionCode: Int = System.getenv("APP_VERSION_CODE")?.toIntOrNull() ?: 1
 val releaseKeystorePath: String? = System.getenv("AAUTH_KEYSTORE_FILE")
 
@@ -80,6 +80,7 @@ android {
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.appcompat)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.kotlinx.coroutines.android)

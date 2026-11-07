@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Window theme only; all real styling is done by Compose Material 3. -->
-    <style name="Theme.AAuth" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Window theme only; all real styling is done by Compose Material 3.
+         AppCompat is required by the per-app language support (AppCompatActivity). -->
+    <style name="Theme.AAuth" parent="Theme.AppCompat.DayNight.NoActionBar" />
 </resources>

@@ -5,18 +5,25 @@ package dev.aauth.app.ui.settings
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.biometric.BiometricManager
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -25,6 +32,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -37,6 +45,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -44,7 +53,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import dev.aauth.app.BuildConfig
+import androidx.core.os.LocaleListCompat
 import dev.aauth.app.R
 import dev.aauth.app.core.PinHasher
 import java.time.LocalDate
@@ -64,6 +73,7 @@ fun SettingsScreen(
     onRemovePin: () -> Unit,
     onExport: (Uri, CharArray) -> Unit,
     onImport: (Uri, CharArray) -> Unit,
+    onAbout: () -> Unit,
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -75,6 +85,9 @@ fun SettingsScreen(
     val lockAvailable = systemLockAvailable || hasPin
 
     var showPinDialog by remember { mutableStateOf(false) }
+    var showLanguageDialog by remember { mutableStateOf(false) }
+    // "" = follow the system, otherwise a language tag such as "en" or "ru".
+    val currentLanguage = AppCompatDelegate.getApplicationLocales().toLanguageTags().substringBefore('-')
     var showExportDialog by remember { mutableStateOf(false) }
     var exportPassword by remember { mutableStateOf<CharArray?>(null) }
     var importUri by remember { mutableStateOf<Uri?>(null) }
@@ -110,6 +123,17 @@ fun SettingsScreen(
                 .padding(padding)
                 .verticalScroll(rememberScrollState()),
         ) {
+            SectionHeader(stringResource(R.string.settings_general))
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_language)) },
+                supportingContent = { Text(stringResource(languageLabel(currentLanguage))) },
+                leadingContent = { Icon(Icons.Outlined.Language, contentDescription = null) },
+                trailingContent = { ChevronIcon() },
+                modifier = Modifier.clickable { showLanguageDialog = true },
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
             SectionHeader(stringResource(R.string.settings_security))
             SwitchRow(
                 title = stringResource(R.string.settings_app_lock),
@@ -154,12 +178,27 @@ fun SettingsScreen(
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-            SectionHeader(stringResource(R.string.settings_about))
             ListItem(
-                headlineContent = { Text(stringResource(R.string.app_name)) },
-                supportingContent = { Text(stringResource(R.string.settings_version, BuildConfig.VERSION_NAME)) },
+                headlineContent = { Text(stringResource(R.string.settings_about_row)) },
+                supportingContent = { Text(stringResource(R.string.settings_about_row_desc)) },
+                leadingContent = { Icon(Icons.Outlined.Info, contentDescription = null) },
+                trailingContent = { ChevronIcon() },
+                modifier = Modifier.clickable(onClick = onAbout),
             )
         }
+    }
+
+    if (showLanguageDialog) {
+        LanguageDialog(
+            current = currentLanguage,
+            onDismiss = { showLanguageDialog = false },
+            onSelect = { tag ->
+                showLanguageDialog = false
+                AppCompatDelegate.setApplicationLocales(
+                    if (tag.isEmpty()) LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(tag),
+                )
+            },
+        )
     }
 
     if (showPinDialog) {
@@ -203,6 +242,54 @@ fun SettingsScreen(
             },
         )
     }
+}
+
+private val LANGUAGES = listOf("", "en", "ru")
+
+private fun languageLabel(tag: String): Int = when (tag) {
+    "en" -> R.string.language_en
+    "ru" -> R.string.language_ru
+    else -> R.string.language_system
+}
+
+@Composable
+private fun LanguageDialog(
+    current: String,
+    onDismiss: () -> Unit,
+    onSelect: (String) -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.settings_language)) },
+        text = {
+            Column(modifier = Modifier.selectableGroup()) {
+                for (tag in LANGUAGES) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                selected = current == tag,
+                                role = Role.RadioButton,
+                                onClick = { onSelect(tag) },
+                            )
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(selected = current == tag, onClick = null)
+                        Text(
+                            text = stringResource(languageLabel(tag)),
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(start = 16.dp),
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+        },
+    )
 }
 
 @Composable

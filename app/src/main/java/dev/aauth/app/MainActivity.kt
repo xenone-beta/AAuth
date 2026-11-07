@@ -13,13 +13,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
-import androidx.fragment.app.FragmentActivity
+import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.aauth.app.ui.lock.LockScreen
 import dev.aauth.app.ui.theme.AAuthTheme
 
-// FragmentActivity (not just ComponentActivity) because BiometricPrompt needs it.
-class MainActivity : FragmentActivity() {
+// AppCompatActivity is a FragmentActivity (needed by BiometricPrompt) and also applies the
+// per-app language chosen in Settings.
+class MainActivity : AppCompatActivity() {
 
     private val viewModel: MainViewModel by viewModels()
 

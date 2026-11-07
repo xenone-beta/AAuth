@@ -10,6 +10,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import dev.aauth.app.ui.about.AboutScreen
 import dev.aauth.app.ui.add.ManualEntryScreen
 import dev.aauth.app.ui.home.HomeScreen
 import dev.aauth.app.ui.scan.ScanScreen
@@ -20,6 +21,7 @@ private object Routes {
     const val SCAN = "scan"
     const val MANUAL = "manual"
     const val SETTINGS = "settings"
+    const val ABOUT = "about"
 }
 
 @Composable
@@ -85,8 +87,12 @@ fun AAuthApp(viewModel: MainViewModel) {
                 onRemovePin = { viewModel.removePin() },
                 onExport = { uri, password -> viewModel.exportBackup(uri, password) },
                 onImport = { uri, password -> viewModel.importBackup(uri, password) },
+                onAbout = { navController.navigate(Routes.ABOUT) },
                 onBack = { navController.popBackStack() },
             )
+        }
+        composable(Routes.ABOUT) {
+            AboutScreen(onBack = { navController.popBackStack() })
         }
     }
 }
