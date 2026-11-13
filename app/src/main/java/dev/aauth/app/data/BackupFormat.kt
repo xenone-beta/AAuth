@@ -2,6 +2,7 @@ package dev.aauth.app.data
 
 import dev.aauth.app.core.OtpAccount
 import dev.aauth.app.core.OtpAlgorithm
+import dev.aauth.app.core.OtpType
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -18,10 +19,12 @@ object BackupFormat {
                     .put("secret", a.secret)
                     .put("algorithm", a.algorithm.name)
                     .put("digits", a.digits)
-                    .put("period", a.period),
+                    .put("period", a.period)
+                    .put("type", a.type.name)
+                    .put("counter", a.counter),
             )
         }
-        val root = JSONObject().put("version", 1).put("accounts", array)
+        val root = JSONObject().put("version", 2).put("accounts", array)
         return root.toString().toByteArray(Charsets.UTF_8)
     }
 
@@ -40,6 +43,8 @@ object BackupFormat {
                         .getOrDefault(OtpAlgorithm.SHA1),
                     digits = o.optInt("digits", 6),
                     period = o.optInt("period", 30),
+                    type = OtpType.fromName(o.optString("type", "TOTP")),
+                    counter = o.optLong("counter", 0L),
                 ),
             )
         }

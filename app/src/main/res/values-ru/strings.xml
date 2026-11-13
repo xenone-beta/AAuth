@@ -111,6 +111,24 @@
     <string name="about_privacy_title">Приватность</string>
     <string name="about_privacy_body">В AAuth нет аккаунтов, серверов, аналитики и рекламы. Ваши секреты хранятся только на этом устройстве и зашифрованы ключом, который не покидает Android Keystore. У приложения нет разрешения на доступ в интернет, поэтому ничего не может быть отправлено наружу. Камера используется только для сканирования QR-кодов, ничего не записывается. Файл резервной копии создаётся только когда вы сами его экспортируете, и пароль знаете только вы.</string>
     <string name="about_changelog_title">Что нового</string>
+    <string name="otp_type">Тип кода</string>
+    <string name="type_totp">TOTP</string>
+    <string name="type_hotp">HOTP</string>
+    <string name="type_steam">Steam Guard</string>
+    <string name="steam_hint">Вставьте shared_secret из maFile Steam (Base64) или ключ Base32.</string>
+    <string name="field_counter">Счётчик</string>
+    <string name="next_code">Следующий код</string>
+    <string name="pin_wipe_warning">Внимание: ещё %1$d неверных попыток — и все данные будут стёрты</string>
+    <string name="settings_wipe">Стирание после неверных PIN</string>
+    <string name="settings_wipe_on">После %1$d неверных попыток</string>
+    <string name="settings_wipe_off">Выключено</string>
+    <string name="wipe_dialog_body">Удалить все аккаунты и PIN после стольких неверных вводов PIN подряд.</string>
+    <string name="wipe_dialog_warning">Это необратимо. Сохраните зашифрованную резервную копию.</string>
+    <string name="about_changelog_112_title">Версия 1.1.2</string>
+    <string name="about_changelog_112">• Аккаунты Steam Guard и HOTP
+• Стирание всех данных после N неверных попыток PIN
+• Плавные анимации: коды, экраны, список
+• Импорт миграции сохраняет счётчики HOTP</string>
     <string name="about_changelog_110_title">Версия 1.1.0</string>
     <string name="about_changelog_110">• Переименование аккаунтов\n• PIN-код приложения с паузами после неверных попыток\n• Виджет на главном экране\n• Фирменные цвета популярных сервисов\n• Выбор языка\n• Новый экран «О приложении»\n• Обновлённый дизайн</string>
     <string name="about_changelog_100_title">Версия 1.0.0</string>

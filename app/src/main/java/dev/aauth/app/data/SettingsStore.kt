@@ -21,6 +21,16 @@ class SettingsStore(context: Context) {
     private val _pinLength = MutableStateFlow(if (prefs.contains(KEY_PIN_HASH)) prefs.getInt(KEY_PIN_LENGTH, 0) else 0)
     val pinLength: StateFlow<Int> = _pinLength.asStateFlow()
 
+    /** Wrong PIN entries in a row after which all accounts are erased; 0 = never. */
+    private val _wipeAfter = MutableStateFlow(prefs.getInt(KEY_WIPE_AFTER, 0))
+    val wipeAfter: StateFlow<Int> = _wipeAfter.asStateFlow()
+
+    fun setWipeAfter(attempts: Int) {
+        val value = if (attempts in WIPE_OPTIONS) attempts else 0
+        prefs.edit().putInt(KEY_WIPE_AFTER, value).apply()
+        _wipeAfter.value = value
+    }
+
     val hasPin: Boolean get() = _pinLength.value > 0
 
     fun setAppLock(enabled: Boolean) {
@@ -57,8 +67,10 @@ class SettingsStore(context: Context) {
             .remove(KEY_PIN_LENGTH)
             .putInt(KEY_FAILED, 0)
             .putLong(KEY_LOCKED_UNTIL, 0L)
+            .putInt(KEY_WIPE_AFTER, 0)
             .apply()
         _pinLength.value = 0
+        _wipeAfter.value = 0
     }
 
     /** Checks [pin] against the stored hash. Slow (PBKDF2): call off the main thread. */
@@ -77,13 +89,17 @@ class SettingsStore(context: Context) {
         get() = prefs.getLong(KEY_LOCKED_UNTIL, 0L)
         set(value) = prefs.edit().putLong(KEY_LOCKED_UNTIL, value).apply()
 
-    private companion object {
-        const val KEY_APP_LOCK = "app_lock"
-        const val KEY_SECURE_SCREEN = "secure_screen"
-        const val KEY_PIN_SALT = "pin_salt"
-        const val KEY_PIN_HASH = "pin_hash"
-        const val KEY_PIN_LENGTH = "pin_length"
-        const val KEY_FAILED = "pin_failed"
-        const val KEY_LOCKED_UNTIL = "pin_locked_until"
+    companion object {
+        /** Choices offered in Settings (0 = off). */
+        val WIPE_OPTIONS = listOf(0, 5, 10, 15, 20)
+
+        private const val KEY_WIPE_AFTER = "pin_wipe_after"
+        private const val KEY_APP_LOCK = "app_lock"
+        private const val KEY_SECURE_SCREEN = "secure_screen"
+        private const val KEY_PIN_SALT = "pin_salt"
+        private const val KEY_PIN_HASH = "pin_hash"
+        private const val KEY_PIN_LENGTH = "pin_length"
+        private const val KEY_FAILED = "pin_failed"
+        private const val KEY_LOCKED_UNTIL = "pin_locked_until"
     }
 }

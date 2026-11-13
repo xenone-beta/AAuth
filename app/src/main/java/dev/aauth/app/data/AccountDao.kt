@@ -19,6 +19,12 @@ interface AccountDao {
     @Query("UPDATE accounts SET issuer = :issuer, label = :label WHERE id = :id")
     suspend fun rename(id: Long, issuer: String, label: String)
 
+    @Query("UPDATE accounts SET counter = :counter WHERE id = :id")
+    suspend fun setCounter(id: Long, counter: Long)
+
+    @Query("DELETE FROM accounts")
+    suspend fun deleteAll()
+
     @Query("DELETE FROM accounts WHERE id = :id")
     suspend fun deleteById(id: Long)
 }

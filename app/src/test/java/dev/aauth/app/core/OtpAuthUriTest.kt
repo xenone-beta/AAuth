@@ -56,9 +56,32 @@ class OtpAuthUriTest {
         OtpAuthUri.parse("otpauth://totp/alice?issuer=GitHub")
     }
 
+    @Test
+    fun parsesHotpWithCounter() {
+        val account = OtpAuthUri.parse("otpauth://hotp/Example:alice?secret=JBSWY3DPEHPK3PXP&counter=7")
+        assertEquals(OtpType.HOTP, account.type)
+        assertEquals(7L, account.counter)
+        assertEquals("Example", account.issuer)
+        assertEquals("alice", account.label)
+    }
+
+    @Test
+    fun hotpCounterDefaultsToZero() {
+        assertEquals(0L, OtpAuthUri.parse("otpauth://hotp/alice?secret=JBSWY3DPEHPK3PXP").counter)
+    }
+
+    @Test
+    fun parsesSteam() {
+        val account = OtpAuthUri.parse("otpauth://steam/alice?secret=JBSWY3DPEHPK3PXP")
+        assertEquals(OtpType.STEAM, account.type)
+        assertEquals("Steam", account.issuer)
+        assertEquals(5, account.digits)
+        assertEquals(OtpAlgorithm.SHA1, account.algorithm)
+    }
+
     @Test(expected = IllegalArgumentException::class)
-    fun rejectsHotp() {
-        OtpAuthUri.parse("otpauth://hotp/alice?secret=JBSWY3DPEHPK3PXP&counter=1")
+    fun rejectsUnknownType() {
+        OtpAuthUri.parse("otpauth://mystery/alice?secret=JBSWY3DPEHPK3PXP")
     }
 
     @Test(expected = IllegalArgumentException::class)

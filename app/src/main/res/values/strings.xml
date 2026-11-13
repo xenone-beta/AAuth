@@ -111,6 +111,24 @@
     <string name="about_privacy_title">Privacy</string>
     <string name="about_privacy_body">AAuth has no accounts, servers, analytics or ads. Your secrets are stored only on this device, encrypted with a key that never leaves the Android Keystore. The app has no permission to use the internet, so nothing can be sent anywhere. The camera is used only to scan QR codes, nothing is recorded. A backup file is created only when you export one, and only you know its password.</string>
     <string name="about_changelog_title">What\'s new</string>
+    <string name="otp_type">Code type</string>
+    <string name="type_totp">TOTP</string>
+    <string name="type_hotp">HOTP</string>
+    <string name="type_steam">Steam Guard</string>
+    <string name="steam_hint">Paste the shared_secret from your Steam maFile (Base64) or a Base32 key.</string>
+    <string name="field_counter">Counter</string>
+    <string name="next_code">Next code</string>
+    <string name="pin_wipe_warning">Warning: %1$d more wrong attempts and all data will be erased</string>
+    <string name="settings_wipe">Erase after wrong PINs</string>
+    <string name="settings_wipe_on">After %1$d wrong attempts</string>
+    <string name="settings_wipe_off">Off</string>
+    <string name="wipe_dialog_body">Delete all accounts and the PIN after this many wrong PIN attempts in a row.</string>
+    <string name="wipe_dialog_warning">This cannot be undone. Keep an encrypted backup.</string>
+    <string name="about_changelog_112_title">Version 1.1.2</string>
+    <string name="about_changelog_112">• Steam Guard and HOTP accounts
+• Erase all data after N wrong PIN attempts
+• Smooth animations: codes, screens, list
+• Migration import now keeps HOTP counters</string>
     <string name="about_changelog_110_title">Version 1.1.0</string>
     <string name="about_changelog_110">• Rename accounts\n• App PIN with delays after wrong attempts\n• Home screen widget\n• Brand colors for popular services\n• Language selection\n• New About screen\n• Refreshed design</string>
     <string name="about_changelog_100_title">Version 1.0.0</string>

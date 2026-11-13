@@ -25,7 +25,7 @@ class RevealAction : ActionCallback {
             WidgetState.hide(context, id)
         } else {
             val account = app.repository.accounts.first().firstOrNull { it.id == id } ?: return
-            val remaining = Totp.secondsRemaining(now, account.period)
+            val remaining = Totp.secondsRemaining(now, account.windowSeconds)
             WidgetState.reveal(context, id, now + remaining * 1000L)
         }
 

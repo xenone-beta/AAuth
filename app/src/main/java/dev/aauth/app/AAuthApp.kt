@@ -1,5 +1,10 @@
 package dev.aauth.app
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -40,8 +45,16 @@ fun AAuthApp(viewModel: MainViewModel) {
     val appLock by viewModel.appLockEnabled.collectAsStateWithLifecycle()
     val secureScreen by viewModel.secureScreen.collectAsStateWithLifecycle()
     val pinLength by viewModel.pinLength.collectAsStateWithLifecycle()
+    val wipeAfter by viewModel.wipeAfter.collectAsStateWithLifecycle()
 
-    NavHost(navController = navController, startDestination = Routes.HOME) {
+    NavHost(
+        navController = navController,
+        startDestination = Routes.HOME,
+        enterTransition = { slideInHorizontally(tween(320)) { it / 4 } + fadeIn(tween(320)) },
+        exitTransition = { slideOutHorizontally(tween(320)) { -it / 6 } + fadeOut(tween(200)) },
+        popEnterTransition = { slideInHorizontally(tween(320)) { -it / 6 } + fadeIn(tween(320)) },
+        popExitTransition = { slideOutHorizontally(tween(320)) { it / 4 } + fadeOut(tween(200)) },
+    ) {
         composable(Routes.HOME) {
             HomeScreen(
                 accounts = accounts,
@@ -51,6 +64,7 @@ fun AAuthApp(viewModel: MainViewModel) {
                 onSettings = { navController.navigate(Routes.SETTINGS) },
                 onDelete = { id -> viewModel.delete(id) },
                 onEdit = { id, issuer, label -> viewModel.rename(id, issuer, label) },
+                onNext = { id, counter -> viewModel.nextCounter(id, counter) },
             )
         }
         composable(Routes.SCAN) {
@@ -80,6 +94,8 @@ fun AAuthApp(viewModel: MainViewModel) {
                 appLock = appLock,
                 secureScreen = secureScreen,
                 pinLength = pinLength,
+                wipeAfter = wipeAfter,
+                onWipeAfterChange = { viewModel.setWipeAfter(it) },
                 snackbarHostState = snackbarHostState,
                 onAppLockChange = { viewModel.setAppLock(it) },
                 onSecureScreenChange = { viewModel.setSecureScreen(it) },

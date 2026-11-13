@@ -10,7 +10,8 @@ No accounts, no cloud, no analytics: your secrets never leave the device.
 
 ## Features
 
-- Time-based one-time codes (RFC 6238) with SHA-1, SHA-256 and SHA-512, 6 to 8 digits, custom period
+- Time-based codes (RFC 6238) with SHA-1, SHA-256 and SHA-512, 6 to 8 digits, custom period; counter-based **HOTP**
+  (RFC 4226) and **Steam Guard** codes (shared_secret as Base64 or Base32)
 - Add accounts by **scanning a QR code** (CameraX + ML Kit) or by typing the setup key
 - **Import from Google Authenticator** by scanning its "Export accounts" QR code
 - Rename accounts (service and account name) at any time
@@ -18,6 +19,8 @@ No accounts, no cloud, no analytics: your secrets never leave the device.
 - Optional **app lock** with biometrics or the device screen lock, or with a **separate app PIN** (4 to 8 digits,
   salted PBKDF2, escalating delay after repeated wrong tries)
 - **Home screen widget**: codes stay hidden until you tap a row, then hide again when the 30 s window ends
+- Optional **erase after N wrong PIN attempts** (5, 10, 15 or 20) that deletes all accounts and the PIN
+- Smooth animations for codes, screens and list changes
 - Brand colors for popular services (optional logos, see [docs/service-icons.md](docs/service-icons.md))
 - In-app **language choice** (system, English, Russian) and an **About** screen with privacy notes and changelog
 - No internet permission: the app cannot send data anywhere (`INTERNET` is removed in the manifest)
@@ -115,6 +118,8 @@ Never commit the `.jks` file (it is in `.gitignore`).
   authenticate with.
 - With an app PIN set, only biometrics are offered next to it (not the device screen lock), so knowing the
   phone's unlock code does not bypass the app PIN.
+- Erase-after-N counts wrong PINs in a row (the counter survives restarts). Wiping is irreversible, so keep an
+  encrypted backup. Biometric unlock does not count as an attempt.
 - PIN throttling uses the wall clock, so changing the system time can shorten a delay. It slows down guessing
   but is not a substitute for a strong device lock.
 - The widget never shows a code while the app lock is on: tapping a row opens the app instead. With the lock
@@ -124,7 +129,6 @@ Never commit the `.jks` file (it is in `.gitignore`).
 
 - Reorder accounts, search, folders
 - Hide codes in the app until tapped
-- HOTP and Steam Guard support
 - Tablet and foldable layouts
 
 ## License

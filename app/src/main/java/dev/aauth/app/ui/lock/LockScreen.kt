@@ -117,6 +117,7 @@ private fun PinPad(
     var entered by remember { mutableStateOf("") }
     var checking by remember { mutableStateOf(false) }
     var attemptsLeft by remember { mutableIntStateOf(-1) } // -1 = no error to show
+    var wipeLeft by remember { mutableIntStateOf(-1) } // -1 = the erase option is off
     var lockedUntil by remember { mutableLongStateOf(initialLockedUntil) }
     var secondsLeft by remember { mutableLongStateOf(0L) }
 
@@ -136,9 +137,11 @@ private fun PinPad(
         scope.launch {
             when (val result = onCheckPin(pin)) {
                 PinCheck.Ok -> onUnlocked()
+                PinCheck.Wiped -> onUnlocked() // nothing is left to protect; the home screen explains what happened
                 is PinCheck.Wrong -> {
                     attemptsLeft = result.attemptsLeft
                     lockedUntil = result.lockedUntil
+                    wipeLeft = result.wipeLeft
                 }
                 is PinCheck.Locked -> lockedUntil = result.until
             }
@@ -189,6 +192,12 @@ private fun PinPad(
         // Reserve the line so the keypad does not jump when a message appears.
         Box(modifier = Modifier.height(40.dp), contentAlignment = Alignment.Center) {
             when {
+                wipeLeft in 0..3 -> Text(
+                    text = stringResource(R.string.pin_wipe_warning, wipeLeft),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                    textAlign = TextAlign.Center,
+                )
                 waiting -> Text(
                     text = stringResource(R.string.pin_wait, formatSeconds(secondsLeft)),
                     style = MaterialTheme.typography.bodyMedium,

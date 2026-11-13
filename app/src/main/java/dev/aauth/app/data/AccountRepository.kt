@@ -3,6 +3,7 @@ package dev.aauth.app.data
 import dev.aauth.app.core.Base32
 import dev.aauth.app.core.OtpAccount
 import dev.aauth.app.core.OtpAlgorithm
+import dev.aauth.app.core.OtpType
 import dev.aauth.app.core.SecretCipher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -27,7 +28,8 @@ class AccountRepository(
         var added = 0
         for (item in list) {
             val bytes = runCatching { Base32.decode(item.secret) }.getOrNull() ?: continue
-            if (bytes.isEmpty() || item.digits !in 6..8 || item.period < 1) continue
+            val digitsOk = if (item.type == OtpType.STEAM) item.digits == 5 else item.digits in 6..8
+            if (bytes.isEmpty() || !digitsOk || item.period < 1) continue
             if (!known.add(keyOf(item.issuer, item.label, bytes))) continue
             dao.insert(
                 AccountEntity(
@@ -38,6 +40,8 @@ class AccountRepository(
                     digits = item.digits,
                     period = item.period,
                     createdAt = System.currentTimeMillis(),
+                    type = item.type.name,
+                    counter = item.counter,
                 ),
             )
             added++
@@ -46,6 +50,12 @@ class AccountRepository(
     }
 
     suspend fun delete(id: Long) = withContext(Dispatchers.IO) { dao.deleteById(id) }
+
+    /** Erases every account. Used when too many wrong PINs were entered. */
+    suspend fun deleteAll() = withContext(Dispatchers.IO) { dao.deleteAll() }
+
+    /** HOTP: stores the counter for the next code. */
+    suspend fun setCounter(id: Long, counter: Long) = withContext(Dispatchers.IO) { dao.setCounter(id, counter) }
 
     suspend fun rename(id: Long, issuer: String, label: String) =
         withContext(Dispatchers.IO) { dao.rename(id, issuer.trim(), label.trim()) }
@@ -61,6 +71,8 @@ class AccountRepository(
                 algorithm = e.algorithm.toAlgorithm(),
                 digits = e.digits,
                 period = e.period,
+                type = OtpType.fromName(e.type),
+                counter = e.counter,
             )
         }
     }
@@ -73,6 +85,8 @@ class AccountRepository(
         algorithm = algorithm.toAlgorithm(),
         digits = digits,
         period = period,
+        type = OtpType.fromName(type),
+        counter = counter,
     )
 
     private fun String.toAlgorithm(): OtpAlgorithm =

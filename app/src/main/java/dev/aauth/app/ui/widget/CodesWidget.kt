@@ -33,7 +33,6 @@ import androidx.glance.text.TextStyle
 import dev.aauth.app.AAuthApplication
 import dev.aauth.app.MainActivity
 import dev.aauth.app.R
-import dev.aauth.app.core.Totp
 import kotlinx.coroutines.flow.first
 
 private const val MAX_ROWS = 8
@@ -67,7 +66,7 @@ class CodesWidget : GlanceAppWidget() {
         val rows = accounts.take(MAX_ROWS).map { account ->
             val secret = account.secret
             val code = if (secret != null && revealed.containsKey(account.id)) {
-                Totp.generate(secret, now, account.algorithm, account.digits, account.period)
+                account.codeAt(now)
             } else {
                 null
             }

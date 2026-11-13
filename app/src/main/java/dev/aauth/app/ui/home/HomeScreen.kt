@@ -2,6 +2,14 @@
 
 package dev.aauth.app.ui.home
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,6 +34,7 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Keyboard
 import androidx.compose.material.icons.outlined.QrCodeScanner
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -74,6 +83,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.aauth.app.R
 import dev.aauth.app.copySensitive
+import dev.aauth.app.core.OtpType
 import dev.aauth.app.core.Totp
 import dev.aauth.app.data.Account
 import kotlinx.coroutines.delay
@@ -88,6 +98,7 @@ fun HomeScreen(
     onSettings: () -> Unit,
     onDelete: (Long) -> Unit,
     onEdit: (Long, String, String) -> Unit,
+    onNext: (Long, Long) -> Unit,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -167,6 +178,8 @@ fun HomeScreen(
                     AccountCard(
                         account = account,
                         nowMillis = now,
+                        modifier = Modifier.animateItem(),
+                        onNext = { onNext(account.id, account.counter) },
                         onCopy = { code ->
                             copySensitive(context, code)
                             scope.launch { snackbarHostState.showSnackbar(copiedText) }
@@ -241,26 +254,33 @@ fun HomeScreen(
 private fun AccountCard(
     account: Account,
     nowMillis: Long,
+    onNext: () -> Unit,
     onCopy: (String) -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val secret = account.secret
-    val step = nowMillis / 1000L / account.period
-    // Recomputed only when the 30 s window changes, not on every animation tick.
-    val code = remember(account.id, step, secret) {
-        secret?.let { Totp.generate(it, nowMillis, account.algorithm, account.digits, account.period) }
+    val window = account.windowSeconds
+    val step = nowMillis / 1000L / window
+    // Recomputed only when the window (or HOTP counter) changes, not on every animation tick.
+    val code = remember(account.id, step, secret, account.counter, account.type) {
+        account.codeAt(nowMillis)
     }
-    val remaining = Totp.secondsRemaining(nowMillis, account.period)
-    val fraction = Totp.remainingFraction(nowMillis, account.period)
-    val expiring = remaining <= 5
-    val accent = if (expiring) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+    val remaining = Totp.secondsRemaining(nowMillis, window)
+    val fraction = Totp.remainingFraction(nowMillis, window)
+    val expiring = account.isTimeBased && remaining <= 5
+    val accent by animateColorAsState(
+        targetValue = if (expiring) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+        animationSpec = tween(400),
+        label = "accent",
+    )
 
     var menuOpen by remember { mutableStateOf(false) }
 
     Card(
         onClick = { code?.let { onCopy(it) } },
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
     ) {
@@ -289,33 +309,50 @@ private fun AccountCard(
                     )
                 }
                 Spacer(Modifier.height(4.dp))
-                Text(
-                    text = code?.let { formatCode(it) } ?: stringResource(R.string.decrypt_error),
-                    style = MaterialTheme.typography.headlineLarge.copy(
-                        fontFamily = FontFamily.Monospace,
-                        fontWeight = FontWeight.Medium,
-                        letterSpacing = 2.sp,
-                    ),
-                    color = if (code == null) MaterialTheme.colorScheme.error else accent,
-                )
+                // The code slides up and fades when it changes.
+                AnimatedContent(
+                    targetState = code,
+                    transitionSpec = {
+                        (slideInVertically(tween(300)) { it / 2 } + fadeIn(tween(300))) togetherWith
+                            (slideOutVertically(tween(300)) { -it / 2 } + fadeOut(tween(150)))
+                    },
+                    label = "code",
+                ) { shown ->
+                    Text(
+                        text = shown?.let { formatCode(it, account.type) } ?: stringResource(R.string.decrypt_error),
+                        style = MaterialTheme.typography.headlineLarge.copy(
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Medium,
+                            letterSpacing = 2.sp,
+                        ),
+                        color = if (shown == null) MaterialTheme.colorScheme.error else accent,
+                    )
+                }
             }
 
-            Box(contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(
-                    progress = { fraction },
-                    modifier = Modifier.size(40.dp),
-                    color = accent,
-                    strokeWidth = 4.dp,
-                    trackColor = if (expiring) {
-                        MaterialTheme.colorScheme.errorContainer
-                    } else {
-                        MaterialTheme.colorScheme.primaryContainer
-                    },
-                )
-                Text(
-                    text = remaining.toString(),
-                    style = MaterialTheme.typography.labelMedium,
-                )
+            if (account.isTimeBased) {
+                Box(contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(
+                        progress = { fraction },
+                        modifier = Modifier.size(40.dp),
+                        color = accent,
+                        strokeWidth = 4.dp,
+                        trackColor = if (expiring) {
+                            MaterialTheme.colorScheme.errorContainer
+                        } else {
+                            MaterialTheme.colorScheme.primaryContainer
+                        },
+                    )
+                    Text(
+                        text = remaining.toString(),
+                        style = MaterialTheme.typography.labelMedium,
+                    )
+                }
+            } else {
+                // HOTP codes do not expire: the button moves the counter and shows the next one.
+                IconButton(onClick = onNext) {
+                    Icon(Icons.Outlined.Refresh, contentDescription = stringResource(R.string.next_code))
+                }
             }
 
             Box {
@@ -466,8 +503,9 @@ private fun EditDialog(
     )
 }
 
-/** "123456" -> "123 456", "12345678" -> "1234 5678". */
-private fun formatCode(code: String): String {
+/** "123456" -> "123 456", "12345678" -> "1234 5678"; Steam codes stay in one piece. */
+private fun formatCode(code: String, type: OtpType): String {
+    if (type == OtpType.STEAM) return code
     val mid = (code.length + 1) / 2
     return code.substring(0, mid) + " " + code.substring(mid)
 }

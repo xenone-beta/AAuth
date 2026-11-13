@@ -11,7 +11,7 @@ import java.util.Base64
  *   OtpParameters { bytes secret = 1; string name = 2; string issuer = 3;
  *                   Algorithm algorithm = 4; DigitCount digits = 5; OtpType type = 6; ... }
  *
- * Only TOTP entries with SHA1/SHA256/SHA512 are imported.
+ * TOTP and HOTP entries with SHA1/SHA256/SHA512 are imported (HOTP keeps its counter, field 7).
  */
 object MigrationParser {
 
@@ -55,6 +55,7 @@ object MigrationParser {
         var algorithm = 1
         var digits = 1
         var type = 2
+        var counter = 0L
 
         while (reader.hasMore()) {
             val tag = reader.varint().toInt()
@@ -67,11 +68,11 @@ object MigrationParser {
                 field == 4 && wire == 0 -> algorithm = reader.varint().toInt()
                 field == 5 && wire == 0 -> digits = reader.varint().toInt()
                 field == 6 && wire == 0 -> type = reader.varint().toInt()
+                field == 7 && wire == 0 -> counter = reader.varint()
                 else -> reader.skip(wire)
             }
         }
 
-        if (type == 1) return null // HOTP is not supported
         if (secret.isEmpty()) return null
         val algo = when (algorithm) {
             0, 1 -> OtpAlgorithm.SHA1
@@ -88,6 +89,8 @@ object MigrationParser {
             algorithm = algo,
             digits = if (digits == 2) 8 else 6,
             period = 30,
+            type = if (type == 1) OtpType.HOTP else OtpType.TOTP,
+            counter = if (type == 1) counter.coerceAtLeast(0L) else 0L,
         )
     }
 

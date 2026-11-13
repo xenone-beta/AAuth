@@ -1,6 +1,8 @@
 package dev.aauth.app.core
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TotpTest {
@@ -75,5 +77,30 @@ class TotpTest {
         assertEquals(1f, Totp.remainingFraction(0, 30), 0.0001f)
         assertEquals(0.5f, Totp.remainingFraction(15_000, 30), 0.0001f)
         assertEquals(0.0333f, Totp.remainingFraction(29_000, 30), 0.001f)
+    }
+
+    @Test
+    fun steamCodeHasFiveCharactersFromTheSteamAlphabet() {
+        val alphabet = "23456789BCDFGHJKMNPQRTVWXY"
+        for (seconds in listOf(0L, 59L, 1_111_111_109L, 2_000_000_000L)) {
+            val code = Totp.steam(sha1Secret, seconds * 1000)
+            assertEquals(5, code.length)
+            assertTrue(code.all { it in alphabet })
+        }
+    }
+
+    @Test
+    fun steamCodeIsStableInsideAWindowAndChangesAfterIt() {
+        val a = Totp.steam(sha1Secret, 30_000)
+        assertEquals(a, Totp.steam(sha1Secret, 59_999))
+        assertNotEquals(a, Totp.steam(sha1Secret, 60_000))
+    }
+
+    @Test
+    fun steamMatchesReferenceValues() {
+        // Computed with an independent implementation of the Steam Guard algorithm.
+        assertEquals("PV9M4", Totp.steam(sha1Secret, 59L * 1000))
+        assertEquals("PY4YB", Totp.steam(sha1Secret, 1111111109L * 1000))
+        assertEquals("9N776", Totp.steam(sha1Secret, 2000000000L * 1000))
     }
 }

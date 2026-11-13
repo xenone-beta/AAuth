@@ -10,6 +10,10 @@ import androidx.biometric.BiometricManager
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import dev.aauth.app.data.SettingsStore
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -66,11 +70,13 @@ fun SettingsScreen(
     appLock: Boolean,
     secureScreen: Boolean,
     pinLength: Int,
+    wipeAfter: Int,
     snackbarHostState: SnackbarHostState,
     onAppLockChange: (Boolean) -> Unit,
     onSecureScreenChange: (Boolean) -> Unit,
     onSavePin: (String) -> Unit,
     onRemovePin: () -> Unit,
+    onWipeAfterChange: (Int) -> Unit,
     onExport: (Uri, CharArray) -> Unit,
     onImport: (Uri, CharArray) -> Unit,
     onAbout: () -> Unit,
@@ -85,6 +91,7 @@ fun SettingsScreen(
     val lockAvailable = systemLockAvailable || hasPin
 
     var showPinDialog by remember { mutableStateOf(false) }
+    var showWipeDialog by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
     // "" = follow the system, otherwise a language tag such as "en" or "ru".
     val currentLanguage = AppCompatDelegate.getApplicationLocales().toLanguageTags().substringBefore('-')
@@ -152,6 +159,22 @@ fun SettingsScreen(
                 trailingContent = { ChevronIcon() },
                 modifier = Modifier.clickable { showPinDialog = true },
             )
+            if (hasPin) {
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.settings_wipe)) },
+                    supportingContent = {
+                        Text(
+                            if (wipeAfter > 0) {
+                                stringResource(R.string.settings_wipe_on, wipeAfter)
+                            } else {
+                                stringResource(R.string.settings_wipe_off)
+                            },
+                        )
+                    },
+                    trailingContent = { ChevronIcon() },
+                    modifier = Modifier.clickable { showWipeDialog = true },
+                )
+            }
             SwitchRow(
                 title = stringResource(R.string.settings_secure_screen),
                 description = stringResource(R.string.settings_secure_screen_desc),
@@ -186,6 +209,17 @@ fun SettingsScreen(
                 modifier = Modifier.clickable(onClick = onAbout),
             )
         }
+    }
+
+    if (showWipeDialog) {
+        WipeDialog(
+            current = wipeAfter,
+            onDismiss = { showWipeDialog = false },
+            onSave = {
+                showWipeDialog = false
+                onWipeAfterChange(it)
+            },
+        )
     }
 
     if (showLanguageDialog) {
@@ -456,5 +490,52 @@ private fun PasswordDialog(
         dismissButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         },
+    )
+}
+
+/** Choose after how many wrong PIN entries in a row all accounts are erased. */
+@Composable
+private fun WipeDialog(current: Int, onDismiss: () -> Unit, onSave: (Int) -> Unit) {
+    var selected by remember { mutableIntStateOf(current) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.settings_wipe)) },
+        text = {
+            Column {
+                Text(
+                    text = stringResource(R.string.wipe_dialog_body),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Spacer(Modifier.height(12.dp))
+                for (option in SettingsStore.WIPE_OPTIONS) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { selected = option }
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(selected = selected == option, onClick = { selected = option })
+                        Text(
+                            text = if (option == 0) {
+                                stringResource(R.string.settings_wipe_off)
+                            } else {
+                                stringResource(R.string.settings_wipe_on, option)
+                            },
+                        )
+                    }
+                }
+                if (selected > 0) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = stringResource(R.string.wipe_dialog_warning),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = { onSave(selected) }) { Text(stringResource(R.string.save)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }

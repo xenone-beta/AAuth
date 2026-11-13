@@ -45,8 +45,26 @@ import dev.aauth.app.R
 import dev.aauth.app.core.Base32
 import dev.aauth.app.core.OtpAccount
 import dev.aauth.app.core.OtpAlgorithm
+import dev.aauth.app.core.OtpType
+import dev.aauth.app.core.Totp
 
 private val DIGIT_OPTIONS = listOf(6, 7, 8)
+private val TYPE_OPTIONS = listOf(OtpType.TOTP, OtpType.HOTP, OtpType.STEAM)
+
+/**
+ * The secret as Base32, or null if it is not valid. Steam's shared_secret is usually Base64
+ * (28 characters ending in "="), so for Steam that form is accepted too.
+ */
+private fun normalizeSecret(input: String, type: OtpType): String? {
+    val text = input.trim()
+    if (text.isEmpty()) return null
+    if (type == OtpType.STEAM && (text.contains('+') || text.contains('/') || (text.endsWith("=") && text.length == 28))) {
+        val bytes = runCatching { java.util.Base64.getDecoder().decode(text) }.getOrNull() ?: return null
+        return if (bytes.isEmpty()) null else Base32.encode(bytes)
+    }
+    val clean = text.filter { it.isLetterOrDigit() }.uppercase()
+    return clean.takeIf { runCatching { Base32.decode(it).isNotEmpty() }.getOrDefault(false) }
+}
 private val PERIOD_OPTIONS = listOf(15, 30, 60)
 
 /** Label on the left, segmented buttons on the right, as in the design mockup. */
@@ -90,10 +108,14 @@ fun ManualEntryScreen(
     var algorithmIndex by rememberSaveable { mutableIntStateOf(0) }
     var digits by rememberSaveable { mutableIntStateOf(6) }
     var period by rememberSaveable { mutableIntStateOf(30) }
+    var typeIndex by rememberSaveable { mutableIntStateOf(0) }
+    var counterText by rememberSaveable { mutableStateOf("0") }
 
     val algorithms = OtpAlgorithm.entries
-    val secretValid = secret.isNotBlank() &&
-        runCatching { Base32.decode(secret).isNotEmpty() }.getOrDefault(false)
+    val type = TYPE_OPTIONS[typeIndex]
+    val normalized = normalizeSecret(secret, type)
+    val secretValid = normalized != null
+    val counterValid = type != OtpType.HOTP || counterText.toLongOrNull()?.let { it >= 0 } == true
     val secretError = secret.isNotBlank() && !secretValid
 
     Scaffold(
@@ -115,6 +137,17 @@ fun ManualEntryScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 8.dp),
         ) {
+            SegmentRow(
+                label = stringResource(R.string.otp_type),
+                options = listOf(
+                    stringResource(R.string.type_totp),
+                    stringResource(R.string.type_hotp),
+                    stringResource(R.string.type_steam),
+                ),
+                selectedIndex = typeIndex,
+                onSelect = { typeIndex = it },
+            )
+            Spacer(Modifier.height(12.dp))
             OutlinedTextField(
                 value = issuer,
                 onValueChange = { issuer = it },
@@ -143,19 +176,43 @@ fun ManualEntryScreen(
                     null
                 },
                 keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Characters,
+                    capitalization = if (type == OtpType.STEAM) KeyboardCapitalization.None else KeyboardCapitalization.Characters,
                     keyboardType = KeyboardType.Ascii,
                 ),
                 modifier = Modifier.fillMaxWidth(),
             )
 
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                TextButton(onClick = { showAdvanced = !showAdvanced }) {
-                    Text(stringResource(R.string.advanced))
+            if (type == OtpType.STEAM) {
+                Text(
+                    text = stringResource(R.string.steam_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+            if (type == OtpType.HOTP) {
+                Spacer(Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = counterText,
+                    onValueChange = { counterText = it.filter(Char::isDigit).take(12) },
+                    label = { Text(stringResource(R.string.field_counter)) },
+                    singleLine = true,
+                    isError = !counterValid,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+
+            // Steam Guard has fixed settings (SHA-1, 5 characters, 30 s): nothing to tweak.
+            if (type != OtpType.STEAM) {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    TextButton(onClick = { showAdvanced = !showAdvanced }) {
+                        Text(stringResource(R.string.advanced))
+                    }
                 }
             }
 
-            if (showAdvanced) {
+            if (showAdvanced && type != OtpType.STEAM) {
                 SegmentRow(
                     label = stringResource(R.string.algorithm),
                     options = algorithms.map { it.uriName },
@@ -170,12 +227,15 @@ fun ManualEntryScreen(
                     onSelect = { digits = DIGIT_OPTIONS[it] },
                 )
                 Spacer(Modifier.height(12.dp))
-                SegmentRow(
-                    label = stringResource(R.string.period),
-                    options = PERIOD_OPTIONS.map { it.toString() },
-                    selectedIndex = PERIOD_OPTIONS.indexOf(period),
-                    onSelect = { period = PERIOD_OPTIONS[it] },
-                )
+                if (type == OtpType.TOTP) {
+                    Spacer(Modifier.height(12.dp))
+                    SegmentRow(
+                        label = stringResource(R.string.period),
+                        options = PERIOD_OPTIONS.map { it.toString() },
+                        selectedIndex = PERIOD_OPTIONS.indexOf(period),
+                        onSelect = { period = PERIOD_OPTIONS[it] },
+                    )
+                }
             }
 
             Spacer(Modifier.height(24.dp))
@@ -185,14 +245,16 @@ fun ManualEntryScreen(
                         OtpAccount(
                             issuer = issuer.trim(),
                             label = label.trim(),
-                            secret = secret.filter { it.isLetterOrDigit() }.uppercase(),
-                            algorithm = algorithms[algorithmIndex],
-                            digits = digits,
-                            period = period,
+                            secret = normalized.orEmpty(),
+                            algorithm = if (type == OtpType.STEAM) OtpAlgorithm.SHA1 else algorithms[algorithmIndex],
+                            digits = if (type == OtpType.STEAM) Totp.STEAM_DIGITS else digits,
+                            period = if (type == OtpType.TOTP) period else 30,
+                            type = type,
+                            counter = if (type == OtpType.HOTP) counterText.toLongOrNull() ?: 0L else 0L,
                         ),
                     )
                 },
-                enabled = secretValid && (issuer.isNotBlank() || label.isNotBlank()),
+                enabled = secretValid && counterValid && (issuer.isNotBlank() || label.isNotBlank()),
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(stringResource(R.string.save))

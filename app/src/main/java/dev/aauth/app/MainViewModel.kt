@@ -35,7 +35,10 @@ sealed interface PinCheck {
     data object Ok : PinCheck
 
     /** Wrong PIN. [attemptsLeft] is how many tries remain before the next forced wait (0 = now waiting). */
-    data class Wrong(val attemptsLeft: Int, val lockedUntil: Long) : PinCheck
+    data class Wrong(val attemptsLeft: Int, val lockedUntil: Long, val wipeLeft: Int = -1) : PinCheck
+
+    /** Too many wrong PINs: every account was erased and the PIN removed. */
+    data object Wiped : PinCheck
 
     /** Entry is refused until [until] (wall-clock millis). */
     data class Locked(val until: Long) : PinCheck
@@ -55,6 +58,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     /** 0 when no PIN is set. */
     val pinLength: StateFlow<Int> = settings.pinLength
+
+    /** Wrong PINs in a row after which the accounts are erased (0 = off). */
+    val wipeAfter: StateFlow<Int> = settings.wipeAfter
 
     private val messageChannel = Channel<UiMessage>(Channel.BUFFERED)
     val messages: Flow<UiMessage> = messageChannel.receiveAsFlow()
@@ -100,6 +106,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             },
         )
         if (added > 0) refreshWidget()
+    }
+
+    /** HOTP: moves to the next counter value, which shows a new code. */
+    fun nextCounter(id: Long, current: Long) {
+        viewModelScope.launch {
+            repository.setCounter(id, current + 1)
+            refreshWidget()
+        }
     }
 
     fun rename(id: Long, issuer: String, label: String) {
@@ -159,10 +173,29 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         val failed = settings.failedAttempts + 1
         settings.failedAttempts = failed
+
+        val wipeAfter = settings.wipeAfter.value
+        if (wipeAfter > 0 && failed >= wipeAfter) {
+            wipeEverything()
+            return PinCheck.Wiped
+        }
+
         val delay = PinLockout.delayMillis(failed)
         val until = if (delay > 0) System.currentTimeMillis() + delay else 0L
         settings.lockedUntil = until
-        return PinCheck.Wrong(PinLockout.attemptsLeftBeforeDelay(failed), until)
+        val wipeLeft = if (wipeAfter > 0) wipeAfter - failed else -1
+        return PinCheck.Wrong(PinLockout.attemptsLeftBeforeDelay(failed), until, wipeLeft)
+    }
+
+    fun setWipeAfter(attempts: Int) = settings.setWipeAfter(attempts)
+
+    /** Erases all accounts and removes the PIN and the app lock, as promised by the "erase after N attempts" option. */
+    private suspend fun wipeEverything() {
+        repository.deleteAll()
+        settings.clearPin()
+        settings.setAppLock(false)
+        refreshWidget()
+        post(UiMessage(R.string.wiped_message))
     }
 
     /** Wall-clock time until which PIN entry is refused, or 0 when entry is allowed. */
