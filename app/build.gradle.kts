@@ -109,4 +109,6 @@ dependencies {
     implementation(libs.mlkit.barcode.scanning)
 
     testImplementation(libs.junit)
+    // The Android SDK ships only a stub of org.json for local unit tests; use the real one there.
+    testImplementation("org.json:json:20240303")
 }
