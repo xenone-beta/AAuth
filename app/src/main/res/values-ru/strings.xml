@@ -124,6 +124,7 @@
     <string name="settings_wipe_off">Выключено</string>
     <string name="wipe_dialog_body">Удалить все аккаунты и PIN после стольких неверных вводов PIN подряд.</string>
     <string name="wipe_dialog_warning">Это необратимо. Сохраните зашифрованную резервную копию.</string>
+    <string name="wiped_message">Слишком много неверных PIN: все данные стёрты</string>
     <string name="about_changelog_112_title">Версия 1.1.2</string>
     <string name="about_changelog_112">• Аккаунты Steam Guard и HOTP
 • Стирание всех данных после N неверных попыток PIN

@@ -124,6 +124,7 @@
     <string name="settings_wipe_off">Off</string>
     <string name="wipe_dialog_body">Delete all accounts and the PIN after this many wrong PIN attempts in a row.</string>
     <string name="wipe_dialog_warning">This cannot be undone. Keep an encrypted backup.</string>
+    <string name="wiped_message">Too many wrong PINs: all data was erased</string>
     <string name="about_changelog_112_title">Version 1.1.2</string>
     <string name="about_changelog_112">• Steam Guard and HOTP accounts
 • Erase all data after N wrong PIN attempts
